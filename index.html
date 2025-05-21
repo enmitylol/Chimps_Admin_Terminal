@@ -61,7 +61,7 @@
           }, [isAccessRestricted]);
 
           return (
-            <div className="min-h-screen bg-gray-900 text-gray-100 font-inter flex items-center justify-center p-4">
+            <div className="min-h-screen bg-gray-900 text-gray-100 font-inter flex">
               {isAccessRestricted ? (
                 showRestrictedMenu ? (
                   <RestrictedAccessMenu
@@ -630,7 +630,7 @@
           };
 
           return (
-            <div className={`w-full max-w-4xl h-[600px] ${terminalBgColor} border ${terminalBorderColor} rounded-lg shadow-lg flex flex-col font-mono ${terminalTextColor}`}>
+            <div className={`w-full h-full ${terminalBgColor} border ${terminalBorderColor} rounded-lg shadow-lg flex flex-col font-mono ${terminalTextColor}`}>
               <div className={`flex-none ${terminalHeaderBg} ${terminalHeaderTextColor} p-2 rounded-t-lg`}>
                 <span className="font-bold">Chimps INC Admin Terminal {isLoggedIn && <span className="text-yellow-300"> (Logged In)</span>}</span>
               </div>
@@ -783,20 +783,67 @@
 
         function RestrictedAccessMenu({ navigateTo, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn }) {
           const [menuMessage, setMenuMessage] = React.useState('');
+          const [isMenuMessageTyping, setIsMenuMessageTyping] = React.useState(false);
+          const [menuOutputQueue, setMenuOutputQueue] = React.useState([]);
+          const menuTypingTimeoutRef = React.useRef(null);
+          const typingSpeedMs = 30; // Consistent typing speed
+
+          React.useEffect(() => {
+            if (menuOutputQueue.length > 0 && !isMenuMessageTyping) {
+              setIsMenuMessageTyping(true);
+              const nextOutput = menuOutputQueue[0];
+              let currentTypedOutput = '';
+              let charIndex = 0;
+
+              const typeNextChar = () => {
+                if (charIndex < nextOutput.length) {
+                  currentTypedOutput += nextOutput[charIndex];
+                  setMenuMessage(currentTypedOutput);
+                  charIndex++;
+                  menuTypingTimeoutRef.current = setTimeout(typeNextChar, typingSpeedMs);
+                } else {
+                  setMenuOutputQueue(prev => prev.slice(1));
+                  setIsMenuMessageTyping(false);
+                }
+              };
+
+              menuTypingTimeoutRef.current = setTimeout(typeNextChar, typingSpeedMs);
+            }
+          }, [menuOutputQueue, isMenuMessageTyping, typingSpeedMs]);
 
           const handleFacilityAction = (action) => {
+            // Clear any ongoing typing and queue before new action
+            if (menuTypingTimeoutRef.current) {
+              clearTimeout(menuTypingTimeoutRef.current);
+              menuTypingTimeoutRef.current = null;
+            }
+            setIsMenuMessageTyping(false);
+            setMenuOutputQueue([]);
+            setMenuMessage(''); // Clear current message instantly
+
             if (!isLoggedIn) {
-              setMenuMessage('Access Denied: Login required for this action.');
-              setTimeout(() => setMenuMessage(''), 3000);
+              setMenuOutputQueue(['Access Denied: Login required for this action.']);
               return;
             }
 
             if (action === 'lockdown') {
-              setMenuMessage('Initiating Facility Lockdown Sequence... Access Granted. System locking down.');
+              setMenuOutputQueue(['Initiating Facility Lockdown Sequence...', 'Access Granted. All non-essential systems are now offline. Perimeter defenses activated.']);
             } else if (action === 'options') {
-              setMenuMessage('Accessing Facility Options... Access Granted. Displaying advanced configurations.');
+              setMenuOutputQueue(['Accessing Facility Options...', 'Access Granted. Displaying advanced configuration parameters for critical systems.']);
             }
-            setTimeout(() => setMenuMessage(''), 3000);
+          };
+
+          const handleReturnToTerminal = () => {
+            if (menuTypingTimeoutRef.current) {
+              clearTimeout(menuTypingTimeoutRef.current);
+              menuTypingTimeoutRef.current = null;
+            }
+            setIsMenuMessageTyping(false);
+            setMenuOutputQueue([]);
+            setMenuMessage(''); // Clear message on exit
+            setIsAccessRestricted(false);
+            setShowRestrictedMenu(false);
+            navigateTo('terminal');
           };
 
           return (
@@ -805,11 +852,7 @@
 
               <div className="flex flex-col space-y-3 w-full max-w-xs">
                 <button
-                  onClick={() => {
-                    setIsAccessRestricted(false);
-                    setShowRestrictedMenu(false);
-                    navigateTo('terminal');
-                  }}
+                  onClick={handleReturnToTerminal}
                   className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-100 font-bold border border-gray-500 rounded-sm transition duration-150 ease-in-out text-lg"
                 >
                   [ TERMINAL_APP ]
@@ -829,7 +872,7 @@
               </div>
 
               {menuMessage && (
-                <p className="mt-6 text-sm text-red-400 animate-pulse text-center">{menuMessage}</p>
+                <p className={`mt-6 text-sm text-red-400 text-center ${isMenuMessageTyping ? 'blinking-cursor' : ''}`}>{menuMessage}</p>
               )}
             </div>
           );
