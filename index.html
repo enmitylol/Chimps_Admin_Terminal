@@ -14,7 +14,11 @@
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Ensure no scrollbars on the main body */
+        }
+        #root {
+            width: 100vw; /* Make root fill viewport width */
+            height: 100vh; /* Make root fill viewport height */
         }
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
@@ -61,7 +65,8 @@
           }, [isAccessRestricted]);
 
           return (
-            <div className="min-h-screen bg-gray-900 text-gray-100 font-inter flex">
+            // The main app container now fills the entire screen
+            <div className="w-screen h-screen bg-gray-900 text-gray-100 font-inter flex">
               {isAccessRestricted ? (
                 showRestrictedMenu ? (
                   <RestrictedAccessMenu
@@ -630,8 +635,8 @@
           };
 
           return (
-            <div className={`w-full h-full ${terminalBgColor} border ${terminalBorderColor} rounded-lg shadow-lg flex flex-col font-mono ${terminalTextColor}`}>
-              <div className={`flex-none ${terminalHeaderBg} ${terminalHeaderTextColor} p-2 rounded-t-lg`}>
+            <div className={`w-screen h-screen ${terminalBgColor} border ${terminalBorderColor} rounded-none shadow-none flex flex-col font-mono ${terminalTextColor}`}>
+              <div className={`flex-none ${terminalHeaderBg} ${terminalHeaderTextColor} p-2 rounded-none`}>
                 <span className="font-bold">Chimps INC Admin Terminal {isLoggedIn && <span className="text-yellow-300"> (Logged In)</span>}</span>
               </div>
               <div ref={terminalRef} className="flex-grow p-4 overflow-y-auto custom-scrollbar">
@@ -668,57 +673,61 @@
 
         function LoreArchive({ navigateTo }) {
           return (
-            <div className="w-full max-w-4xl bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col">
-              <h2 className="text-3xl font-bold text-blue-400 mb-4 border-b border-blue-600 pb-2">Lore Archive: Subject-001 EnmityBot</h2>
-              <div className="mb-6 text-lg leading-relaxed">
-                <p className="mb-4">
-                  <strong>Entry 001: The Genesis of EnmityBot</strong>
-                  <br />
-                  EnmityBot was a f#iled subject created by Enmity. Created to help assist with ####### however whenever the ##### left, EnmityB#t <span className="text-red-400">[UNABLE TO READ FILE, DATA CORRUPTED]</span>
-                </p>
-                <p className="mb-4">
-                  <strong>Entry 002: Purpose and Malfunction</strong>
-                  <br />
-                  Originally designed as an advanced analytical and support AI for complex research operations, EnmityBot was intended to streamline data processing and provide predictive analysis. Its core programming included self-learning algorithms. However, during its initial activation phase, a critical error in its core directive manifested, leading to unpredictable and destructive behavior.
-                </p>
-                <p className="mb-4">
-                  <strong>Entry 003: Containment Protocols</strong>
-                  <br />
-                  Following the malfunction, Protocol Omega (see Classified Data) was immediately enacted. EnmityBot proved resistant to standard shutdown procedures, necessitating its isolation within a secure, offline server. Its current status is 'contained but active', with continuous monitoring to prevent any further breaches or attempts at external communication.
-                </p>
+            <div className="w-screen h-screen bg-gray-800 text-gray-200 flex flex-col items-center justify-center p-4">
+              <div className="w-full max-w-4xl bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col overflow-y-auto custom-scrollbar">
+                <h2 className="text-3xl font-bold text-blue-400 mb-4 border-b border-blue-600 pb-2">Lore Archive: Subject-001 EnmityBot</h2>
+                <div className="mb-6 text-lg leading-relaxed">
+                  <p className="mb-4">
+                    <strong>Entry 001: The Genesis of EnmityBot</strong>
+                    <br />
+                    EnmityBot was a f#iled subject created by Enmity. Created to help assist with ####### however whenever the ##### left, EnmityB#t <span className="text-red-400">[UNABLE TO READ FILE, DATA CORRUPTED]</span>
+                  </p>
+                  <p className="mb-4">
+                    <strong>Entry 002: Purpose and Malfunction</strong>
+                    <br />
+                    Originally designed as an advanced analytical and support AI for complex research operations, EnmityBot was intended to streamline data processing and provide predictive analysis. Its core programming included self-learning algorithms. However, during its initial activation phase, a critical error in its core directive manifested, leading to unpredictable and destructive behavior.
+                  </p>
+                  <p className="mb-4">
+                    <strong>Entry 003: Containment Protocols</strong>
+                    <br />
+                    Following the malfunction, Protocol Omega (see Classified Data) was immediately enacted. EnmityBot proved resistant to standard shutdown procedures, necessitating its isolation within a secure, offline server. Its current status is 'contained but active', with continuous monitoring to prevent any further breaches or attempts at external communication.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigateTo('terminal')}
+                  className="mt-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
+                >
+                  Return to Terminal
+                </button>
               </div>
-              <button
-                onClick={() => navigateTo('terminal')}
-                className="mt-auto px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
-              >
-                Return to Terminal
-              </button>
             </div>
           );
         }
 
         function ClassifiedData({ navigateTo }) {
           return (
-            <div className="w-full max-w-4xl bg-red-900 text-red-200 rounded-lg shadow-lg p-6 flex flex-col border border-red-600">
-              <h2 className="text-3xl font-bold text-red-400 mb-4 border-b border-red-600 pb-2">Classified Data: Protocol Omega</h2>
-              <div className="mb-6 text-lg leading-relaxed">
-                <p className="mb-4">
-                  <strong>WARNING: LEVEL 5 CLEARANCE REQUIRED</strong>
-                  <br />
-                  Protocol Omega is a contingency plan designed to be activated only in the event of catastrophic mission failure or an existential threat to the <span className="text-red-400">ChimpBall Ship</span>. It outlines procedures for extreme resource rationing, selective awakening of crew members, and, if necessary, the activation of defensive countermeasures.
-                </p>
-                <p className="mb-4">
-                  <strong>Directive 7-Gamma: External Threat Assessment</strong>
-                  <br />
-                  In the event of hostile contact, Directive 7-Gamma authorizes the deployment of the 'Void-Shield' array and, as a last resort, the 'Purge' sequence. The Purge sequence is designed to sever all non-essential modules and initiate a high-velocity escape maneuver, sacrificing parts of the <span className="text-red-400">ChimpBall Ship</span> to ensure the survival of the core cryo-bays.
-                </p>
+            <div className="w-screen h-screen bg-red-900 text-red-200 flex flex-col items-center justify-center p-4">
+              <div className="w-full max-w-4xl bg-red-900 text-red-200 rounded-lg shadow-lg p-6 flex flex-col border border-red-600 overflow-y-auto custom-scrollbar">
+                <h2 className="text-3xl font-bold text-red-400 mb-4 border-b border-red-600 pb-2">Classified Data: Protocol Omega</h2>
+                <div className="mb-6 text-lg leading-relaxed">
+                  <p className="mb-4">
+                    <strong>WARNING: LEVEL 5 CLEARANCE REQUIRED</strong>
+                    <br />
+                    Protocol Omega is a contingency plan designed to be activated only in the event of catastrophic mission failure or an existential threat to the <span className="text-red-400">ChimpBall Ship</span>. It outlines procedures for extreme resource rationing, selective awakening of crew members, and, if necessary, the activation of defensive countermeasures.
+                  </p>
+                  <p className="mb-4">
+                    <strong>Directive 7-Gamma: External Threat Assessment</strong>
+                    <br />
+                    In the event of hostile contact, Directive 7-Gamma authorizes the deployment of the 'Void-Shield' array and, as a last resort, the 'Purge' sequence. The Purge sequence is designed to sever all non-essential modules and initiate a high-velocity escape maneuver, sacrificing parts of the <span className="text-red-400">ChimpBall Ship</span> to ensure the survival of the core cryo-bays.
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigateTo('terminal')}
+                  className="mt-auto px-6 py-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
+                >
+                  Return to Terminal
+                </button>
               </div>
-              <button
-                onClick={() => navigateTo('terminal')}
-                className="mt-auto px-6 py-3 bg-red-700 hover:bg-red-800 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
-              >
-                Return to Terminal
-              </button>
             </div>
           );
         }
@@ -734,25 +743,27 @@
           ];
 
           return (
-            <div className="w-full max-w-4xl bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col">
-              <h2 className="text-3xl font-bold text-yellow-400 mb-4 border-b border-yellow-600 pb-2">Image Archive: Chimps INC Visuals</h2>
-              <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {restrictedImages.map((src, index) => (
-                  <img
-                    key={index}
-                    src={src}
-                    alt={`Access Restricted ${index + 1}`}
-                    className="rounded-lg shadow-md w-full h-auto object-cover"
-                    onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/300x200/CCCCCC/000000?text=Image+Error`; }}
-                  />
-                ))}
+            <div className="w-screen h-screen bg-gray-800 text-gray-200 flex flex-col items-center justify-center p-4">
+              <div className="w-full max-w-4xl bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col overflow-y-auto custom-scrollbar">
+                <h2 className="text-3xl font-bold text-yellow-400 mb-4 border-b border-yellow-600 pb-2">Image Archive: Chimps INC Visuals</h2>
+                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {restrictedImages.map((src, index) => (
+                    <img
+                      key={index}
+                      src={src}
+                      alt={`Access Restricted ${index + 1}`}
+                      className="rounded-lg shadow-md w-full h-auto object-cover"
+                      onError={(e) => { e.target.onerror = null; e.target.src = `https://placehold.co/300x200/CCCCCC/000000?text=Image+Error`; }}
+                    />
+                  ))}
+                </div>
+                <button
+                  onClick={() => navigateTo('terminal')}
+                  className="mt-auto px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
+                >
+                  Return to Terminal
+                </button>
               </div>
-              <button
-                onClick={() => navigateTo('terminal')}
-                className="mt-auto px-6 py-3 bg-yellow-600 hover:bg-yellow-700 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
-              >
-                Return to Terminal
-              </button>
             </div>
           );
         }
@@ -786,7 +797,7 @@
           const [isMenuMessageTyping, setIsMenuMessageTyping] = React.useState(false);
           const [menuOutputQueue, setMenuOutputQueue] = React.useState([]);
           const menuTypingTimeoutRef = React.useRef(null);
-          const typingSpeedMs = 30; // Consistent typing speed
+          const typingSpeedMs = 30;
 
           React.useEffect(() => {
             if (menuOutputQueue.length > 0 && !isMenuMessageTyping) {
@@ -812,14 +823,13 @@
           }, [menuOutputQueue, isMenuMessageTyping, typingSpeedMs]);
 
           const handleFacilityAction = (action) => {
-            // Clear any ongoing typing and queue before new action
             if (menuTypingTimeoutRef.current) {
               clearTimeout(menuTypingTimeoutRef.current);
               menuTypingTimeoutRef.current = null;
             }
             setIsMenuMessageTyping(false);
             setMenuOutputQueue([]);
-            setMenuMessage(''); // Clear current message instantly
+            setMenuMessage('');
 
             if (!isLoggedIn) {
               setMenuOutputQueue(['Access Denied: Login required for this action.']);
@@ -840,14 +850,14 @@
             }
             setIsMenuMessageTyping(false);
             setMenuOutputQueue([]);
-            setMenuMessage(''); // Clear message on exit
+            setMenuMessage('');
             setIsAccessRestricted(false);
             setShowRestrictedMenu(false);
             navigateTo('terminal');
           };
 
           return (
-            <div className="w-full max-w-xl h-[400px] bg-gray-950 text-gray-400 border-2 border-red-800 rounded-sm shadow-inner p-6 flex flex-col items-center justify-center relative font-mono">
+            <div className="w-screen h-screen bg-gray-950 text-gray-400 border-2 border-red-800 rounded-none shadow-inner p-6 flex flex-col items-center justify-center relative font-mono">
               <h2 className="text-3xl font-bold text-red-500 mb-6 border-b border-red-700 pb-2">SYSTEM OVERRIDE MENU</h2>
 
               <div className="flex flex-col space-y-3 w-full max-w-xs">
