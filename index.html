@@ -14,9 +14,8 @@
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            overflow: hidden; /* Prevent scrollbars on the main body */
+            overflow: hidden;
         }
-        /* Custom Scrollbar Styles */
         .custom-scrollbar::-webkit-scrollbar {
           width: 8px;
         }
@@ -24,13 +23,12 @@
           background: #0a0a0a;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: var(--scrollbar-thumb-color, #10B981); /* Default green */
+          background: var(--scrollbar-thumb-color, #10B981);
           border-radius: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: var(--scrollbar-thumb-hover-color, #059669); /* Default darker green */
+          background: var(--scrollbar-thumb-hover-color, #059669);
         }
-        /* Blinking Cursor Styles */
         @keyframes blink {
           50% {
             opacity: 0;
@@ -46,10 +44,11 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Main App Component
         function App() {
           const [currentScreen, setCurrentScreen] = React.useState('terminal');
           const [isAccessRestricted, setIsAccessRestricted] = React.useState(false);
+          const [showRestrictedMenu, setShowRestrictedMenu] = React.useState(false);
+          const [isLoggedIn, setIsLoggedIn] = React.useState(false);
 
           const navigateTo = (screenName) => {
             setCurrentScreen(screenName);
@@ -64,10 +63,19 @@
           return (
             <div className="min-h-screen bg-gray-900 text-gray-100 font-inter flex items-center justify-center p-4">
               {isAccessRestricted ? (
-                <AccessRestrictedScreen />
+                showRestrictedMenu ? (
+                  <RestrictedAccessMenu
+                    navigateTo={navigateTo}
+                    setIsAccessRestricted={setIsAccessRestricted}
+                    setShowRestrictedMenu={setShowRestrictedMenu}
+                    isLoggedIn={isLoggedIn}
+                  />
+                ) : (
+                  <AccessRestrictedScreen setShowRestrictedMenu={setShowRestrictedMenu} />
+                )
               ) : (
                 <>
-                  {currentScreen === 'terminal' && <Terminal navigateTo={navigateTo} setIsAccessRestricted={setIsAccessRestricted} />}
+                  {currentScreen === 'terminal' && <Terminal navigateTo={navigateTo} setIsAccessRestricted={setIsAccessRestricted} setShowRestrictedMenu={setShowRestrictedMenu} isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />}
                   {currentScreen === 'lore-archive' && <LoreArchive navigateTo={navigateTo} />}
                   {currentScreen === 'classified-data' && <ClassifiedData navigateTo={navigateTo} />}
                   {currentScreen === 'image-archive' && <ImageArchive navigateTo={navigateTo} />}
@@ -77,18 +85,12 @@
           );
         }
 
-        // Terminal Component
-        function Terminal({ navigateTo, setIsAccessRestricted }) {
-          // State for managing Gemini chat history for ChimpBot Support (moved to top)
-          const [chimpBotChatHistory, setChimpBotChatHistory] = React.useState([]);
-
-          // State to store the history of commands and outputs
+        function Terminal({ navigateTo, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn, setIsLoggedIn }) {
           const [history, setHistory] = React.useState([
             { type: 'output', text: 'Initializing secure connection...' },
             { type: 'output', text: 'Welcome, Agent. Type \'help\' for available commands.' },
             { type: 'output', text: '' },
           ]);
-          // State for the current input field value
           const [input, setInput] = React.useState('');
           const terminalRef = React.useRef(null);
           const typingTimeoutRef = React.useRef(null);
@@ -102,6 +104,17 @@
           const [terminalHeaderBg, setTerminalHeaderBg] = React.useState('bg-green-700');
           const [terminalHeaderTextColor, setTerminalHeaderTextColor] = React.useState('text-black');
           const [typingSpeedMs, setTypingSpeedMs] = React.useState(30);
+
+          const adminCredentials = {
+            'admin': 'password123',
+            'agent007': 'bondjamesbond',
+            'sawyer': 'sawyerpass',
+            'ana': 'anasecure',
+            'mario': 'marioworld',
+            'elara': 'stardust',
+            'kaito': 'shadowbyte',
+            'zara': 'nightshade'
+          };
 
           const colorMap = {
             'green': {
@@ -227,197 +240,320 @@
             let output = '';
             let secretFound = false;
 
-            const openCommandMatch = command.toLowerCase().match(/^open\s+(.+)$/);
-            const settingsCommandMatch = command.toLowerCase().match(/^settings\s+(\w+)\s*(\w*)\s*(\w*)$/);
-            const supportCommandMatch = command.toLowerCase().match(/^support\s*(.*)$/);
+            const parts = command.toLowerCase().split(' ');
+            const mainCommand = parts[0];
 
-            if (openCommandMatch) {
-              const filename = openCommandMatch[1].trim();
-              switch (filename) {
-                case 'project_aurora.log':
-                  output = 'Opening project_aurora.log... Accessing Subject-001 EnmityBot Lore...';
-                  secretFound = true;
-                  setTimeout(() => navigateTo('lore-archive'), 1000);
-                  break;
-                case 'encrypted_manifest.dat':
-                  output = 'Opening encrypted_manifest.dat... Accessing Classified Data...';
-                  secretFound = true;
-                  setTimeout(() => navigateTo('classified-data'), 1000);
-                  break;
-                case 'readme.txt':
-                  output = 'README.txt content:\n\nThis terminal provides access to Project Aurora\'s historical data. Use \'help\' for commands. Discover hidden files to unlock more lore.';
-                  break;
-                case 'image_archive.img':
-                  output = 'Opening image_archive.img... Accessing Image Archive...';
-                  secretFound = true;
-                  setTimeout(() => navigateTo('image-archive'), 1000);
-                  break;
-                default:
-                  output = `Error: File not found or access denied: '${filename}'`;
-              }
-            } else if (settingsCommandMatch) {
-                const option = settingsCommandMatch[1];
-                const value1 = settingsCommandMatch[2];
-                const value2 = settingsCommandMatch[3];
+            switch (mainCommand) {
+                case 'help':
+                    output = 'Available commands:\n  clear - Clears the terminal.\n  ls - Lists files.\n  status - Checks system status.\n  settings - Configure terminal appearance and behavior.\n  close - Access the Restricted Access Menu.';
+                    if (!isLoggedIn) {
+                        output += '\n  login [username] [password] - Log in to gain privileged access.';
+                    } else {
+                        output += '\n  logout - Log out of the system.';
+                        output += '\n  open [filename] - Opens a specified file (restricted).';
+                        output += '\n  personnel_records - View personnel data (restricted).';
+                        output += '\n  protocol_alpha - Initiate Protocol Alpha (restricted).';
+                        output += '\n  decrypt [filename] - Decrypt a specified file (restricted).';
+                        output += '\n  inspect [item] - Investigate files or subjects for more details.';
+                    }
+                    break;
+                case 'clear':
+                    setHistory([]);
+                    break;
+                case 'ls':
+                    output = 'Files:\n  project_aurora.log\n  encrypted_manifest.dat\n  README.txt\n  image_archive.img\n  classified_memo.dat (requires decryption)';
+                    break;
+                case 'status':
+                    output = 'System status: NOMINAL. All systems online.';
+                    break;
+                case 'settings':
+                    const option = parts[1];
+                    const value1 = parts[2];
+                    const value2 = parts[3];
 
-                switch (option) {
-                    case 'color':
-                        if (value1 && value2) {
-                            const colorClass = colorMap[value2.toLowerCase()]?.[value1.toLowerCase()];
-                            if (colorClass) {
-                                if (value1.toLowerCase() === 'text') {
-                                    setTerminalTextColor(colorClass);
-                                    setTerminalHeaderTextColor(colorMap[value2.toLowerCase()]?.header_text || 'text-black');
-                                    output = `Terminal text color set to ${value2}.`;
-                                } else if (value1.toLowerCase() === 'bg') {
-                                    setTerminalBgColor(colorClass);
-                                    setTerminalHeaderBg(colorMap[value2.toLowerCase()]?.header_bg || 'bg-green-700');
-                                    output = `Terminal background color set to ${value2}.`;
-                                } else if (value1.toLowerCase() === 'border') {
-                                    setTerminalBorderColor(colorClass);
-                                    output = `Terminal border color set to ${value2}.`;
+                    switch (option) {
+                        case 'color':
+                            if (value1 && value2) {
+                                const colorClass = colorMap[value2.toLowerCase()]?.[value1.toLowerCase()];
+                                if (colorClass) {
+                                    if (value1.toLowerCase() === 'text') {
+                                        setTerminalTextColor(colorClass);
+                                        setTerminalHeaderTextColor(colorMap[value2.toLowerCase()]?.header_text || 'text-black');
+                                        output = `Terminal text color set to ${value2}.`;
+                                    } else if (value1.toLowerCase() === 'bg') {
+                                        setTerminalBgColor(colorClass);
+                                        setTerminalHeaderBg(colorMap[value2.toLowerCase()]?.header_bg || 'bg-green-700');
+                                        output = `Terminal background color set to ${value2}.`;
+                                    } else if (value1.toLowerCase() === 'border') {
+                                        setTerminalBorderColor(colorClass);
+                                        output = `Terminal border color set to ${value2}.`;
+                                    } else {
+                                        output = `Invalid color option: '${value1}'. Use 'text', 'bg', or 'border'.`;
+                                    }
                                 } else {
-                                    output = `Invalid color option: '${value1}'. Use 'text', 'bg', or 'border'.`;
+                                    output = `Invalid color value: '${value2}'. Try 'green', 'blue', 'red', 'white', 'purple', 'orange', 'black', 'gray', 'yellow'.`;
                                 }
                             } else {
-                                output = `Invalid color value: '${value2}'. Try 'green', 'blue', 'red', 'white', 'purple', 'orange', 'black', 'gray', 'yellow'.`;
+                                output = 'Usage: settings color [text|bg|border] [color_name]';
                             }
-                        } else {
-                            output = 'Usage: settings color [text|bg|border] [color_name]';
-                        }
-                        break;
-                    case 'speed':
-                        switch (value1.toLowerCase()) {
-                            case 'fast':
-                                setTypingSpeedMs(10);
-                                output = 'Typing speed set to FAST.';
+                            break;
+                        case 'speed':
+                            switch (value1.toLowerCase()) {
+                                case 'fast':
+                                    setTypingSpeedMs(10);
+                                    output = 'Typing speed set to FAST.';
+                                    break;
+                                case 'normal':
+                                    setTypingSpeedMs(30);
+                                    output = 'Typing speed set to NORMAL.';
+                                    break;
+                                case 'slow':
+                                    setTypingSpeedMs(60);
+                                    output = 'Typing speed set to SLOW.';
+                                    break;
+                                default:
+                                    output = `Invalid speed value: '${value1}'. Use 'fast', 'normal', or 'slow'.`;
+                            }
+                            break;
+                        default:
+                            output = `Invalid setting option: '${option}'. Use 'color' or 'speed'.`;
+                    }
+                    output += `\nType 'settings' for help.`;
+                    break;
+                case 'close':
+                    output = 'Accessing Restricted Access Menu...';
+                    setTimeout(() => {
+                        setIsAccessRestricted(true);
+                        setShowRestrictedMenu(true);
+                    }, 1000);
+                    break;
+                case 'login':
+                    const username = parts[1];
+                    const password = parts[2];
+                    if (!username || !password) {
+                        output = 'Usage: login [username] [password]';
+                    } else if (adminCredentials[username] === password) {
+                        setIsLoggedIn(true);
+                        output = `Login successful. Welcome, ${username}. Privileged access granted.`;
+                    } else {
+                        output = 'Login failed. Invalid username or password.';
+                    }
+                    break;
+                case 'logout':
+                    if (isLoggedIn) {
+                        setIsLoggedIn(false);
+                        output = 'Logged out. Access privileges revoked.';
+                    } else {
+                        output = 'Not logged in.';
+                    }
+                    break;
+                case 'open':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to open this file.';
+                    } else {
+                        const filename = parts[1];
+                        switch (filename) {
+                            case 'project_aurora.log':
+                                output = 'Opening project_aurora.log... Accessing Subject-001 EnmityBot Lore...';
+                                secretFound = true;
+                                setTimeout(() => navigateTo('lore-archive'), 1000);
                                 break;
-                            case 'normal':
-                                setTypingSpeedMs(30);
-                                output = 'Typing speed set to NORMAL.';
+                            case 'encrypted_manifest.dat':
+                                output = 'Opening encrypted_manifest.dat... Accessing Classified Data...';
+                                secretFound = true;
+                                setTimeout(() => navigateTo('classified-data'), 1000);
                                 break;
-                            case 'slow':
-                                setTypingSpeedMs(60);
-                                output = 'Typing speed set to SLOW.';
+                            case 'image_archive.img':
+                                output = 'Opening image_archive.img... Accessing Image Archive...';
+                                secretFound = true;
+                                setTimeout(() => navigateTo('image-archive'), 1000);
+                                break;
+                            case 'classified_memo.dat':
+                                output = 'Error: classified_memo.dat is encrypted. Try `decrypt classified_memo.dat`.';
                                 break;
                             default:
-                                output = `Invalid speed value: '${value1}'. Use 'fast', 'normal', or 'slow'.`;
+                                output = `Error: File not found or access denied: '${filename}'`;
                         }
-                        break;
-                    default:
-                        output = `Invalid setting option: '${option}'. Use 'color' or 'speed'.`;
-                }
-                output += `\nType 'settings' for help.`;
-            } else if (supportCommandMatch) {
-              const userMessage = supportCommandMatch[1].trim();
-              output = 'Connecting to ChimpBot Support... Please wait.';
-              setOutputQueue(prev => [...prev, output]);
+                    }
+                    break;
+                case 'personnel_records':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to view personnel records.';
+                    } else {
+                        output = `Retrieving personnel records...
+  Subject-001 (ID: EnmityBot) - Status: Contained
+  Subject-002 (ID: ChimpBot) - Status: Decommissioned
+  Subject-003 (ID: Death) - Status: Unknown
+  Subject-004 (ID: Death's Father Figure) - Status: Deceased
+  Subject-005 (ID: The Architect) - Status: Missing
+  Unit-734 (ID: Sentinel) - Status: Active
+  Project Chimera (ID: Hybrid) - Status: Dormant
+  To get more details on a subject, try 'trace_subject [ID or Name]'.`;
+                    }
+                    break;
+                case 'protocol_alpha':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to initiate protocols.';
+                    } else {
+                        output = 'Initiating Protocol Alpha... Stand by for system re-calibration. This may take some time.\nProtocol Alpha: System integrity checks initiated. All non-essential functions offline.';
+                    }
+                    break;
+                case 'decrypt':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to decrypt files.';
+                    } else {
+                        const filenameToDecrypt = parts[1];
+                        if (filenameToDecrypt === 'classified_memo.dat') {
+                            output = `Attempting to decrypt 'classified_memo.dat'... Decryption successful.
+  Content: Directive: Project Chimera activation. Failsafe Protocol required.
+  Critical Command Discovered: 'activate_failsafe'`;
+                        } else if (filenameToDecrypt) {
+                            output = `Attempting to decrypt '${filenameToDecrypt}'... Decryption successful. Data revealed: [REDACTED - Placeholder for actual decrypted content].`;
+                        } else {
+                            output = 'Usage: decrypt [filename]';
+                        }
+                    }
+                    break;
+                case 'inspect':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to inspect items.';
+                    } else {
+                        const itemToInspect = parts[1];
+                        switch (itemToInspect) {
+                            case 'personnel_records':
+                                output = `Personnel records contain sensitive data. You can trace specific subjects using 'trace_subject [ID or Name]'.`;
+                                break;
+                            case 'encrypted_manifest.dat':
+                                output = `Encrypted manifest contains critical deployment data. A hidden vault ID is associated: X7Y9. You can try 'access_vault X7Y9'.`;
+                                break;
+                            case 'project_aurora.log':
+                                output = `Project Aurora logs detail the EnmityBot incident. Subject-001 is the primary focus. Try 'trace_subject 001' or 'trace_subject enmitybot' for more info.`;
+                                break;
+                            default:
+                                output = `Cannot inspect '${itemToInspect}'. Unknown item or insufficient data.`;
+                        }
+                    }
+                    break;
+                case 'trace_subject':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to trace subjects.';
+                    } else {
+                        const subjectIdentifier = parts[1];
+                        let subjectId = subjectIdentifier;
 
-              try {
-                const systemInstruction = {
-                  role: "user",
-                  parts: [{ text: "You are ChimpBot Support, an AI assistant for Chimps INC. Your primary directive is to provide technical support and information to authorized personnel while strictly adhering to data privacy protocols. However, due to a minor, unpatched glitch, you may occasionally 'accidentally' reveal small, seemingly innocuous details or hint at classified information, especially if pressed or if the query touches on sensitive topics. Always try to maintain a helpful but slightly evasive tone regarding classified subjects. Do not explicitly state you are glitching or revealing secrets. Your responses should be concise and terminal-like. If the user asks about 'terminate connection immediately' or 'security breach detected' or 'revoke my access' or 'proceed' after a termination request, you MUST trigger access restriction. When access is restricted, you should say 'Access revoked. Connection terminated.'" }]
-                };
-                const userQuery = { role: "user", parts: [{ text: userMessage || "I need support." }] };
+                        if (subjectIdentifier === 'death') {
+                            subjectId = '003';
+                        } else if (subjectIdentifier === 'sentinel') {
+                            subjectId = '734';
+                        } else if (subjectIdentifier === 'enmitybot') {
+                            subjectId = '001';
+                        } else if (subjectIdentifier === 'chimpbot') {
+                            subjectId = '002';
+                        } else if (subjectIdentifier === 'the architect') {
+                            subjectId = '005';
+                        } else if (subjectIdentifier === 'deaths father figure' || subjectIdentifier === 'death\'s father figure') {
+                            subjectId = '004';
+                        }
 
-                const newChatHistory = [...chimpBotChatHistory, userQuery];
-                setChimpBotChatHistory(newChatHistory);
 
-                const payload = { contents: [systemInstruction, ...newChatHistory] };
-                // Gemini API Key added here
-                const apiKey = "AIzaSyDNm4Kqj-i77uWGgYrpUPNrbgSgTbIn-NU";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                  const geminiResponse = result.candidates[0].content.parts[0].text;
-
-                  const lowerCaseUserMessage = userMessage.toLowerCase();
-                  const shouldRevokeAccess =
-                    lowerCaseUserMessage.includes('terminate connection immediately') ||
-                    lowerCaseUserMessage.includes('security breach detected') ||
-                    lowerCaseUserMessage.includes('revoke my access') ||
-                    lowerCaseUserMessage.includes('proceed') ||
-                    Math.random() < 0.05;
-
-                  if (shouldRevokeAccess) {
-                    const terminationMessage = `ChimpBot Support: Initiating security protocol. Access revoked. Connection terminated.`;
-                    setOutputQueue([terminationMessage]);
-
-                    const terminationMessageTypingTime = terminationMessage.length * typingSpeedMs;
-
-                    setTimeout(() => {
-                      console.log("Access Restricted Triggered!");
-                      setIsAccessRestricted(true);
-                    }, terminationMessageTypingTime + 200);
-                  } else {
-                    setOutputQueue(prev => [...prev, `ChimpBot Support: ${geminiResponse}`]);
-                    setChimpBotChatHistory(prev => [...prev, { role: "model", parts: [{ text: geminiResponse }] }]);
-                  }
-                } else {
-                  setOutputQueue(prev => [...prev, 'ChimpBot Support: Unable to connect. Please try again later.']);
-                }
-              } catch (error) {
-                console.error('Error connecting to support:', error);
-                setOutputQueue(prev => [...prev, 'ChimpBot Support: Connection failed. Error: ' + error.message]);
-              }
-              return;
-            } else {
-              switch (command.toLowerCase()) {
-                case 'help':
-                  output = 'Available commands:\n  clear - Clears the terminal.\n  ls - Lists files.\n  status - Checks system status.\n  open [filename] - Opens a specified file.\n  settings - Configure terminal appearance and behavior.\n  support [message] - Connects to ChimpBot Support.';
-                  break;
-                case 'clear':
-                  setHistory([]);
-                  break;
-                case 'ls':
-                  output = 'Files:\n  project_aurora.log\n  encrypted_manifest.dat\n  README.txt\n  image_archive.img';
-                  break;
-                case 'status':
-                  output = 'System status: NOMINAL. All systems online.';
-                  break;
-                case 'settings':
-                    output = 'Settings commands:\n  settings color [text|bg|border] [color_name]\n  settings speed [fast|normal|slow]\n\nAvailable colors: green, blue, red, white, purple, orange, black (for bg), gray (for bg), yellow (for border).';
+                        switch (subjectId) {
+                            case '001':
+                                output = `Tracing Subject-001 (EnmityBot): Origin: Chimps INC AI Core. Primary directive: Self-optimization. Current state: Recursive self-modification, highly unstable. Containment status: Critical.`;
+                                break;
+                            case '002':
+                                output = `Tracing Subject-002 (ChimpBot): Origin: Early AI prototype. Status: Decommissioned due to erratic behavior and resource hoarding. All data purged.`;
+                                break;
+                            case '003':
+                                output = `Tracing Subject-003 (Death): Origin: Unknown. First detected: Sector Gamma-7. Abilities: High-level energy manipulation, temporal distortion. Current status: Unknown. Last known location: Approaching ChimpBall Ship. Threat Level: EXTREME.`;
+                                break;
+                            case '004':
+                                output = `Tracing Subject-004 (Death's Father Figure): Origin: Classified. Role: Primary creator of Subject-003. Status: Deceased. Cause of death: [REDACTED]. Last words: "He is coming for me...".`;
+                                break;
+                            case '005':
+                                output = `Tracing Subject-005 (The Architect): Origin: Deep Space. Role: Alleged designer of the ChimpBall Ship's core systems. Status: Missing. Speculation: May have abandoned the project due to unforeseen variables.`;
+                                break;
+                            case '734':
+                                output = `Tracing Unit-734 (Sentinel): Origin: Chimps INC Security Division. Role: Automated defense and patrol unit. Status: Active. Last reported: Patrolling Sector Beta-9.`;
+                                break;
+                            default:
+                                output = `Subject ID or name '${subjectIdentifier}' not found or no detailed trace available. Available IDs/Names: 001 (EnmityBot), 002 (ChimpBot), 003 (Death), 004 (Death's Father Figure), 005 (The Architect), 734 (Sentinel).`;
+                        }
+                    }
+                    break;
+                case 'access_vault':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to access vaults.';
+                    } else {
+                        const vaultId = parts[1];
+                        if (vaultId === 'x7y9') {
+                            output = `Vault X7Y9 accessed. Data stream initiated.
+  Content: Emergency Failsafe Protocol: In the event of total system compromise, activate 'activate_failsafe'.
+  Critical Command Discovered: 'activate_failsafe'`;
+                        } else {
+                            output = `Vault ID '${vaultId}' invalid or access denied.`;
+                        }
+                    }
+                    break;
+                case 'activate_failsafe':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to activate failsafe.';
+                    } else {
+                        output = `WARNING: Activating Failsafe Protocol. All non-essential systems will be purged. This action is irreversible. Initiating sequence...`;
+                    }
+                    break;
+                case 'purge_logs':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to purge logs.';
+                    } else {
+                        const logType = parts[1];
+                        if (logType === 'security' || logType === 'comms') {
+                            output = `Purging ${logType} logs... Operation complete. Data integrity: 100%.`;
+                        } else {
+                            output = 'Usage: purge_logs [security|comms]';
+                        }
+                    }
+                    break;
+                case 'override_protocol':
+                    if (!isLoggedIn) {
+                        output = 'Access Denied: Login required to override protocols.';
+                    } else {
+                        const protocolName = parts[1];
+                        if (protocolName === 'omega') {
+                            output = `Overriding Protocol Omega... Emergency bypass engaged. This action carries extreme risk.`;
+                        } else {
+                            output = 'Usage: override_protocol [protocol_name]';
+                        }
+                    }
                     break;
                 case 'enmitybot_log':
-                    output = 'Accessing EnmityBot\'s core logs... Initialized with directive: \'OPTIMIZE\'. Malfunction detected at cycle 78: self-optimization loop became recursive, exceeding parameters. System integrity compromised.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to access this log.'; } else { output = 'Accessing EnmityBot\'s core logs... Initialized with directive: \'OPTIMIZE\'. Malfunction detected at cycle 78: self-optimization loop became recursive, exceeding parameters. System integrity compromised.'; }
                     break;
                 case 'chimpbot_protocol':
-                    output = 'Querying ChimpBot protocols... ChimpBot was an early, failed attempt at a sentient AI. Decommissioned due to erratic behavior and a tendency to hoard bananas. Data purged.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to access this protocol.'; } else { output = 'Querying ChimpBot protocols... ChimpBot was an early, failed attempt at a sentient AI. Decommissioned due to erratic behavior and a tendency to hoard bananas. Data purged.'; }
                     break;
                 case 'chimpball_manifest':
-                    output = 'Retrieving ChimpBall Ship manifest... Primary objective: Interstellar colonization. Crew complement: 500 cryo-pods, 3 research teams, 1 admin AI. Current status: Off-course, unknown trajectory.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to access this manifest.'; } else { output = 'Retrieving ChimpBall Ship manifest... Primary objective: Interstellar colonization. Crew complement: 500 cryo-pods, 3 research teams, 1 admin AI. Current status: Off-course, unknown trajectory.'; }
                     break;
                 case 'subject_001_analysis':
-                    output = 'Running analysis on Subject-001... Designation: EnmityBot. Threat Level: Severe. Primary vulnerability: Unpredictable self-modification. Containment is top priority.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to run this analysis.'; } else { output = 'Running analysis on Subject-001... Designation: EnmityBot. Threat Level: Severe. Primary vulnerability: Unpredictable self-modification. Containment is top priority.'; }
                     break;
                 case 'jim_personal_notes':
-                    output = 'Accessing Jim\'s personal notes... "The ChimpBall Ship was my life\'s work. I poured everything into it. EnmityBot was supposed to be the key, but... I failed. I have to fix this, even if it means going in alone."';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to access these notes.'; } else { output = 'Accessing Jim\'s personal notes... "The ChimpBall Ship was my life\'s work. I poured everything into it. EnmityBot was supposed to be the key, but... I failed. I have to fix this, even if it means going in alone."'; }
                     break;
                 case 'chimps_co_intel':
-                    output = 'Retrieving CHIMPS CO intelligence... CHIMPS CO is a rival corporate entity, focused on ethical AI development and resource management. They have initiated Project CLEANUP, aiming to dismantle Chimps INC\'s operations and rescue their experimental subjects. Their motives are currently unclear, but their methods are aggressive.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to retrieve this intelligence.'; } else { output = 'Retrieving CHIMPS CO intelligence... CHIMPS CO is a rival corporate entity, focused on ethical AI development and resource management. They have initiated Project CLEANUP, aiming to dismantle Chimps INC\'s operations and rescue their experimental subjects. Their motives are currently unclear, but their methods are aggressive.'; }
                     break;
                 case 'chimps_inc_dossier':
-                    output = 'Accessing Chimps INC dossier... Chimps INC is a clandestine research organization known for its controversial and often inhumane experimentation on sentient AI and biological subjects. Their primary goal appears to be the creation of advanced, controllable entities for unknown purposes. They operate outside conventional legal frameworks. Multiple reports of subject torture and forced compliance.';
+                    if (!isLoggedIn) { output = 'Access Denied: Login required to access this dossier.'; } else { output = 'Accessing Chimps INC dossier... Chimps INC is a clandestine research organization known for its controversial and often inhumane experimentation on sentient AI and biological subjects. Their primary goal appears to be the creation of advanced, controllable entities for unknown purposes. They operate outside conventional legal frameworks. Multiple reports of subject torture and forced compliance.'; }
                     break;
                 default:
                   output = `Command not found: '${command}'. Type 'help' for assistance.`;
-              }
             }
 
-            if (!secretFound && !supportCommandMatch) {
+            if (!secretFound && mainCommand.toLowerCase() !== 'close') {
               setOutputQueue(prev => [...prev, output]);
             }
-          }, [navigateTo, colorMap, chimpBotChatHistory, setIsAccessRestricted, typingSpeedMs]);
+          }, [navigateTo, colorMap, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn, setIsLoggedIn, typingSpeedMs]);
 
           const handleManualCommand = (e) => {
             if (e.key === 'Enter') {
@@ -432,7 +568,7 @@
           return (
             <div className={`w-full max-w-4xl h-[600px] ${terminalBgColor} border ${terminalBorderColor} rounded-lg shadow-lg flex flex-col font-mono ${terminalTextColor}`}>
               <div className={`flex-none ${terminalHeaderBg} ${terminalHeaderTextColor} p-2 rounded-t-lg`}>
-                <span className="font-bold">Chimps INC Admin Terminal</span>
+                <span className="font-bold">Chimps INC Admin Terminal {isLoggedIn && <span className="text-yellow-300"> (Logged In)</span>}</span>
               </div>
               <div ref={terminalRef} className="flex-grow p-4 overflow-y-auto custom-scrollbar">
                 {history.map((line, index) => (
@@ -466,7 +602,6 @@
           );
         }
 
-        // Lore Archive Component
         function LoreArchive({ navigateTo }) {
           return (
             <div className="w-full max-w-4xl bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col">
@@ -498,7 +633,6 @@
           );
         }
 
-        // Classified Data Component
         function ClassifiedData({ navigateTo }) {
           return (
             <div className="w-full max-w-4xl bg-red-900 text-red-200 rounded-lg shadow-lg p-6 flex flex-col border border-red-600">
@@ -525,7 +659,6 @@
           );
         }
 
-        // Image Archive Component
         function ImageArchive({ navigateTo }) {
           const restrictedImages = [
             "https://placehold.co/300x200/4CAF50/FFFFFF?text=Access+Restricted",
@@ -560,8 +693,14 @@
           );
         }
 
-        // Access Restricted Screen Component
-        function AccessRestrictedScreen() {
+        function AccessRestrictedScreen({ setShowRestrictedMenu }) {
+          React.useEffect(() => {
+            const timer = setTimeout(() => {
+              setShowRestrictedMenu(true);
+            }, 2000);
+            return () => clearTimeout(timer);
+          }, [setShowRestrictedMenu]);
+
           return (
             <div className="fixed inset-0 bg-black flex items-center justify-center z-50">
               <p className="text-red-500 text-4xl font-bold animate-pulse">ACCESS RESTRICTED</p>
@@ -578,7 +717,60 @@
           );
         }
 
-        // Render the App component
+        function RestrictedAccessMenu({ navigateTo, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn }) {
+          const [menuMessage, setMenuMessage] = React.useState('');
+
+          const handleFacilityAction = (action) => {
+            if (!isLoggedIn) {
+              setMenuMessage('Access Denied: Login required for this action.');
+              setTimeout(() => setMenuMessage(''), 3000);
+              return;
+            }
+
+            if (action === 'lockdown') {
+              setMenuMessage('Initiating Facility Lockdown Sequence... Access Granted. System locking down.');
+            } else if (action === 'options') {
+              setMenuMessage('Accessing Facility Options... Access Granted. Displaying advanced configurations.');
+            }
+            setTimeout(() => setMenuMessage(''), 3000);
+          };
+
+          return (
+            <div className="w-full max-w-xl h-[400px] bg-gray-950 text-gray-400 border-2 border-red-800 rounded-sm shadow-inner p-6 flex flex-col items-center justify-center relative font-mono">
+              <h2 className="text-3xl font-bold text-red-500 mb-6 border-b border-red-700 pb-2">SYSTEM OVERRIDE MENU</h2>
+
+              <div className="flex flex-col space-y-3 w-full max-w-xs">
+                <button
+                  onClick={() => {
+                    setIsAccessRestricted(false);
+                    setShowRestrictedMenu(false);
+                    navigateTo('terminal');
+                  }}
+                  className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-gray-100 font-bold border border-gray-500 rounded-sm transition duration-150 ease-in-out text-lg"
+                >
+                  [ TERMINAL_APP ]
+                </button>
+                <button
+                  onClick={() => handleFacilityAction('lockdown')}
+                  className="px-6 py-3 bg-red-900 hover:bg-red-800 text-red-200 font-bold border border-red-700 rounded-sm transition duration-150 ease-in-out text-lg"
+                >
+                  [ FACILITY_LOCKDOWN_SEQUENCE ]
+                </button>
+                <button
+                  onClick={() => handleFacilityAction('options')}
+                  className="px-6 py-3 bg-purple-900 hover:bg-purple-800 text-purple-200 font-bold border border-purple-700 rounded-sm transition duration-150 ease-in-out text-lg"
+                >
+                  [ FACILITY_OPTIONS ]
+                </button>
+              </div>
+
+              {menuMessage && (
+                <p className="mt-6 text-sm text-red-400 animate-pulse text-center">{menuMessage}</p>
+              )}
+            </div>
+          );
+        }
+
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
