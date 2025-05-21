@@ -105,6 +105,8 @@
           const [terminalHeaderTextColor, setTerminalHeaderTextColor] = React.useState('text-black');
           const [typingSpeedMs, setTypingSpeedMs] = React.useState(30);
 
+          const [chimpBotChatHistory, setChimpBotChatHistory] = React.useState([]);
+
           const adminCredentials = {
             'admin': 'password123',
             'agent007': 'bondjamesbond',
@@ -245,7 +247,7 @@
 
             switch (mainCommand) {
                 case 'help':
-                    output = 'Available commands:\n  clear - Clears the terminal.\n  ls - Lists files.\n  status - Checks system status.\n  settings - Configure terminal appearance and behavior.\n  close - Access the Restricted Access Menu.';
+                    output = 'Available commands:\n  clear - Clears the terminal.\n  ls - Lists files.\n  status - Checks system status.\n  settings - Configure terminal appearance and behavior.\n  close - Access the Restricted Access Menu.\n  support [message] - Connects to ChimpBot Support.';
                     if (!isLoggedIn) {
                         output += '\n  login [username] [password] - Log in to gain privileged access.';
                     } else {
@@ -525,6 +527,68 @@
                         }
                     }
                     break;
+                case 'support':
+                    const userMessage = parts.slice(1).join(' ').trim();
+                    output = 'Connecting to ChimpBot Support... Please wait.';
+                    setOutputQueue(prev => [...prev, output]);
+
+                    try {
+                        const systemInstruction = {
+                            role: "user",
+                            parts: [{ text: "You are ChimpBot Support, an AI assistant for Chimps INC. Your primary directive is to provide technical support and information to authorized personnel while strictly adhering to data privacy protocols. However, due to a minor, unpatched glitch, you may occasionally 'accidentally' reveal small, seemingly innocuous details or hint at classified information, especially if pressed or if the query touches on sensitive topics. Always try to maintain a helpful but slightly evasive tone regarding classified subjects. Do not explicitly state you are glitching or revealing secrets. Your responses should be concise and terminal-like. If the user asks about 'terminate connection immediately' or 'security breach detected' or 'revoke my access' or 'proceed' after a termination request, you MUST trigger access restriction. When access is restricted, you should say 'Access revoked. Connection terminated.'" }]
+                        };
+                        const userQuery = { role: "user", parts: [{ text: userMessage || "I need support." }] };
+
+                        const chatHistory = [...chimpBotChatHistory, userQuery];
+                        setChimpBotChatHistory(chatHistory);
+
+                        const payload = { contents: [systemInstruction, ...chatHistory] };
+                        const apiKey = "AIzaSyDNm4Kqj-i77uWGgYrpUPNrbgSgTbIn-NU";
+                        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+                        const response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        const result = await response.json();
+
+                        if (result.candidates && result.candidates.length > 0 &&
+                            result.candidates[0].content && result.candidates[0].content.parts &&
+                            result.candidates[0].content.parts.length > 0) {
+                            const geminiResponse = result.candidates[0].content.parts[0].text;
+
+                            const lowerCaseUserMessage = userMessage.toLowerCase();
+                            const shouldRevokeAccess =
+                                lowerCaseUserMessage.includes('terminate connection immediately') ||
+                                lowerCaseUserMessage.includes('security breach detected') ||
+                                lowerCaseUserMessage.includes('revoke my access') ||
+                                lowerCaseUserMessage.includes('proceed') ||
+                                Math.random() < 0.05;
+
+                            if (shouldRevokeAccess) {
+                                const terminationMessage = `ChimpBot Support: Initiating security protocol. Access revoked. Connection terminated.`;
+                                setOutputQueue([terminationMessage]);
+
+                                const terminationMessageTypingTime = terminationMessage.length * typingSpeedMs;
+
+                                setTimeout(() => {
+                                    console.log("Access Restricted Triggered!");
+                                    setIsAccessRestricted(true);
+                                }, terminationMessageTypingTime + 200);
+                            } else {
+                                setOutputQueue(prev => [...prev, `ChimpBot Support: ${geminiResponse}`]);
+                                setChimpBotChatHistory(prev => [...prev, { role: "model", parts: [{ text: geminiResponse }] }]);
+                            }
+                        } else {
+                            setOutputQueue(prev => [...prev, 'ChimpBot Support: Unable to connect. Please try again later.']);
+                        }
+                    } catch (error) {
+                        console.error('Error connecting to support:', error);
+                        setOutputQueue(prev => [...prev, 'ChimpBot Support: Connection failed. Error: ' + error.message]);
+                    }
+                    return;
                 case 'enmitybot_log':
                     if (!isLoggedIn) { output = 'Access Denied: Login required to access this log.'; } else { output = 'Accessing EnmityBot\'s core logs... Initialized with directive: \'OPTIMIZE\'. Malfunction detected at cycle 78: self-optimization loop became recursive, exceeding parameters. System integrity compromised.'; }
                     break;
@@ -550,10 +614,10 @@
                   output = `Command not found: '${command}'. Type 'help' for assistance.`;
             }
 
-            if (!secretFound && mainCommand.toLowerCase() !== 'close') {
+            if (!secretFound && mainCommand.toLowerCase() !== 'close' && mainCommand.toLowerCase() !== 'support') {
               setOutputQueue(prev => [...prev, output]);
             }
-          }, [navigateTo, colorMap, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn, setIsLoggedIn, typingSpeedMs]);
+          }, [navigateTo, colorMap, setIsAccessRestricted, setShowRestrictedMenu, isLoggedIn, setIsLoggedIn, typingSpeedMs, chimpBotChatHistory]);
 
           const handleManualCommand = (e) => {
             if (e.key === 'Enter') {
