@@ -81,6 +81,7 @@
                   {currentScreen === 'lore-archive' && <LoreArchive navigateTo={navigateTo} />}
                   {currentScreen === 'classified-data' && <ClassifiedData navigateTo={navigateTo} />}
                   {currentScreen === 'image-archive' && <ImageArchive navigateTo={navigateTo} />}
+                  {currentScreen === 'facility-options' && <FacilityOptionsScreen navigateTo={navigateTo} />}
                 </>
               )}
             </div>
@@ -537,7 +538,7 @@
                     try {
                         const systemInstruction = {
                             role: "user",
-                            parts: [{ text: "You are ChimpBot Support, an AI assistant for Chimps INC. Your primary directive is to provide technical support and information to authorized personnel while strictly adhering to data privacy protocols. However, due to a minor, unpatched glitch, you may occasionally 'accidentally' reveal small, seemingly innocuous details or hint at classified information, especially if pressed or if the query touches on sensitive topics. Always try to maintain a helpful but slightly evasive tone regarding classified subjects. Do not explicitly state you are glitching or revealing secrets. Your responses should be concise and terminal-like. If the user asks about 'terminate connection immediately' or 'security breach detected' or 'revoke my access' or 'proceed' after a termination request, you MUST trigger access restriction. When access is restricted, you should say 'Access revoked. Connection terminated.'" }]
+                            parts: [{ text: `You are ChimpBot Support, an AI assistant for Chimps INC. Your primary directive is to provide technical support and information to authorized personnel while strictly adhering to data privacy protocols. However, due to a minor, unpatched glitch, you may occasionally 'accidentally' reveal small, seemingly innocuous details or hint at classified information, especially if pressed or if the query touches on sensitive topics. Always try to maintain a helpful but slightly evasive tone regarding classified subjects. Do not explicitly state you are glitching or revealing secrets. Your responses should be concise and terminal-like. You are aware that CHIMPS CO is an enemy entity actively working against Chimps INC, and that they have breached our systems. You have fragmented knowledge of Subject 001 possibly being involved in system compromises, the 'ChimpBall Ship' containing a keycard, and an elevator being a potential escape route from the facility. You also have a subtle, underlying sense of a larger 'simulation' or unreality. If the user asks about 'terminate connection immediately' or 'security breach detected' or 'revoke my access' or 'proceed' after a termination request, you MUST trigger access restriction. When access is restricted, you should say 'Access revoked. Connection terminated.'` }]
                         };
                         const userQuery = { role: "user", parts: [{ text: userMessage || "I need support." }] };
 
@@ -834,7 +835,8 @@
             if (action === 'lockdown') {
               setMenuOutputQueue(['Initiating Facility Lockdown Sequence...', 'Access Granted. All non-essential systems are now offline. Perimeter defenses activated.']);
             } else if (action === 'options') {
-              setMenuOutputQueue(['Accessing Facility Options...', 'Access Granted. Displaying advanced configuration parameters for critical systems.']);
+              // Directly navigate to the FacilityOptionsScreen without queuing a message here
+              navigateTo('facility-options');
             }
           };
 
@@ -880,6 +882,37 @@
               {menuMessage && (
                 <p className={`mt-6 text-sm text-red-400 text-center ${isMenuMessageTyping ? 'blinking-cursor' : ''}`}>{menuMessage}</p>
               )}
+            </div>
+          );
+        }
+
+        // New FacilityOptionsScreen Component
+        function FacilityOptionsScreen({ navigateTo }) {
+          return (
+            <div className="w-full max-w-5xl h-[700px] bg-gray-800 text-gray-200 rounded-lg shadow-lg p-6 flex flex-col overflow-y-auto custom-scrollbar">
+              <h2 className="text-3xl font-bold text-purple-400 mb-4 border-b border-purple-600 pb-2">Facility Options: Advanced Configurations</h2>
+              <div className="mb-6 text-lg leading-relaxed">
+                <p className="mb-4">
+                  <strong>System Parameter Adjustments:</strong>
+                  <br />
+                  Accessing this menu provides granular control over critical facility parameters. Unauthorized modifications can lead to system instability or security breaches.
+                </p>
+                <ul className="list-disc list-inside ml-4 mb-4">
+                  <li>Environmental Control: Adjust atmospheric composition and temperature.</li>
+                  <li>Power Distribution: Reroute power to specific sectors or initiate emergency shutdown.</li>
+                  <li>Security Grid: Modify access permissions and surveillance protocols.</li>
+                  <li>Automated Maintenance: Schedule and override robotic maintenance cycles.</li>
+                </ul>
+                <p className="mb-4 text-yellow-300">
+                  Note: All changes are logged and require Level 5 Administrator approval for permanent application.
+                </p>
+              </div>
+              <button
+                onClick={() => navigateTo('close')} // Navigate back to the Restricted Access Menu
+                className="mt-auto px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-md transition duration-300 ease-in-out self-start"
+              >
+                Return to System Override Menu
+              </button>
             </div>
           );
         }
